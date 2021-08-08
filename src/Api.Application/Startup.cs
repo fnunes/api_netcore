@@ -11,6 +11,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
+using Api.CrossCutting.Mappings;
+using AutoMapper;
 
 namespace application
 {
@@ -26,10 +28,20 @@ namespace application
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            var tokenConfigurations = new TokenConfigurations();
-            var signingConfigurations = new SigningConfigurations();
+            var config = new AutoMapper.MapperConfiguration(cfg =>
+           {
+               cfg.AddProfile(new DtoToModelProfile());
+               cfg.AddProfile(new EntityToDtoProfile());
+               cfg.AddProfile(new ModelToEntityProfile());
+           });
+            IMapper mapper = config.CreateMapper();
+            services.AddSingleton(mapper);
+
             ConfigureService.ConfigureDependenciesService(services);
             ConfigureRepository.ConfigureDependenciesRepositories(services);
+
+            var tokenConfigurations = new TokenConfigurations();
+            var signingConfigurations = new SigningConfigurations();
             services.AddSingleton(signingConfigurations);
             new ConfigureFromConfigurationOptions<TokenConfigurations>(
                 Configuration.GetSection("TokenConfigurations"))
